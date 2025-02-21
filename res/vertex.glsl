@@ -1,11 +1,11 @@
 #version 410
 
-layout(location = 0) in vec2 in_position;
-uniform float aspect_ratio;
+layout(location = 0) in vec3 in_position;
 uniform float offset;
+uniform mat4 view_projection_matrix;
 
 void main()
 {
-    vec2 shaderPos = vec2(in_position.x / aspect_ratio + offset, in_position.y);
-    gl_Position = vec4(shaderPos, 0., 1.);
+    vec3 shaderPos = vec3(in_position.x + offset, in_position.y, in_position.z);
+    gl_Position = view_projection_matrix  * vec4(shaderPos, 1.);
 }

@@ -18,15 +18,45 @@ int main()
         .vertex_buffers = {{
         .layout = {gl::VertexAttribute::Position3D{0}},
         .data = {
-           -0.5f, -0.5f, 0.f,
-           -0.5f, 0.5f, 0.f,
-           0.5f, -0.5f, 0.f,
-           0.5f, 0.5f, 0.f,
+            // Continue here
+        //    -0.5f, -0.5f, 0.f,
+        //    -0.5f, 0.5f, 0.f,
+        //    0.5f, -0.5f, 0.f,
+        //    0.5f, 0.5f, 0.f,
+        0,0,0, //0
+        0,0,1, //1
+        0,1,0, //2
+        0,1,1, //3
+        1,0,0, //4
+        1,0,1, //5
+        1,1,0, //6
+        1,1,1, //7
         },
         }},
         .index_buffer = {
-            0, 1, 2,
-            1, 3, 2
+            // Face avant (Z = 0)
+            0, 2, 6,
+            0, 6, 4,
+                
+            // Face arrière (Z = 1)
+            1, 5, 7,
+            1, 7, 3,
+                
+            // Face gauche (X = 0)
+            0, 1, 3,
+            0, 3, 2,
+                
+            // Face droite (X = 1)
+            4, 6, 7,
+            4, 7, 5,
+                
+            // Face haut (Y = 1) - Correction ici
+            2, 3, 7,
+            2, 7, 6,
+                
+            // Face bas (Y = 0)
+            0, 4, 5,
+            0, 5, 1
         },
     }};
 
@@ -58,7 +88,9 @@ int main()
         // End limit framerate
 
         float time = gl::time_in_seconds();
-        float positionX = std::sin(time * speed);
+        // float positionX = std::sin(time * speed);
+        float positionX = 0;
+
 
         glClearColor(0.f, 0.f, 1.f, 0.1f); // Choisis la couleur à utiliser. Les paramètres sont R, G, B, A avec des valeurs qui vont de 0 à 1
         glClear(GL_COLOR_BUFFER_BIT); // Exécute concrètement l'action d'appliquer sur tout l'écran la couleur choisie au-dessus

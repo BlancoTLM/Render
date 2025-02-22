@@ -3,6 +3,7 @@
 #include "thread"
 #include "glm/ext/matrix_clip_space.hpp"
 
+
 int main()
 {
     // Initialisation
@@ -13,6 +14,11 @@ int main()
     auto const shader = gl::Shader{{ //Shader
         .vertex   = gl::ShaderSource::File{"res/vertex.glsl"},
         .fragment = gl::ShaderSource::File{"res/fragment.glsl"},
+    }};
+
+    auto const plane_shader = gl::Shader{{
+        .vertex   = gl::ShaderSource::File{"res/plane_vertex.glsl"},
+        .fragment = gl::ShaderSource::File{"res/plane_fragment.glsl"},
     }};
 
     auto const triangle_mesh = gl::Mesh{{
@@ -67,6 +73,30 @@ int main()
         },
     }};
 
+    auto const plane_mesh = gl::Mesh{{
+        .vertex_buffers = {{
+        .layout = {
+            gl::VertexAttribute::Position3D{0},
+            gl::VertexAttribute::UV{1}
+        },
+        .data = {
+        0,0,0, //0
+        0,0,
+        0,1,0, //1
+        0,1,
+        1,0,0, //2
+        1,0,
+        1,1,0, //3
+        1,1,
+        },
+        }},
+        .index_buffer = {
+            // Face avant (Z = 0)
+            0, 1, 2,
+            1, 2, 3,
+        },
+    }};
+
     auto const texture = gl::Texture{
         gl::TextureSource::File{ // Peut être un fichier, ou directement un tableau de pixels
             .path           = "res/square.jpg",
@@ -81,6 +111,31 @@ int main()
         }
     };
 
+    auto render_target = gl::RenderTarget{gl::RenderTarget_Descriptor{
+        .width          = gl::framebuffer_width_in_pixels(),
+        .height         = gl::framebuffer_height_in_pixels(),
+        .color_textures = {
+            gl::ColorAttachment_Descriptor{
+                .format  = gl::InternalFormat_Color::RGBA8,
+                .options = {
+                    .minification_filter  = gl::Filter::NearestNeighbour, // On va toujours afficher la texture à la taille de l'écran,
+                    .magnification_filter = gl::Filter::NearestNeighbour, // donc les filtres n'auront pas d'effet. Tant qu'à faire on choisit le moins coûteux.
+                    .wrap_x               = gl::Wrap::ClampToEdge,
+                    .wrap_y               = gl::Wrap::ClampToEdge,
+                },
+            },
+        },
+        .depth_stencil_texture = gl::DepthStencilAttachment_Descriptor{
+            .format  = gl::InternalFormat_DepthStencil::Depth32F,
+            .options = {
+                .minification_filter  = gl::Filter::NearestNeighbour,
+                .magnification_filter = gl::Filter::NearestNeighbour,
+                .wrap_x               = gl::Wrap::ClampToEdge,
+                .wrap_y               = gl::Wrap::ClampToEdge,
+            },
+        },
+    }};
+
     float speed = 2.0f;
     const int target_fps = 60;
     const double frame_time = 1.0 / target_fps;
@@ -90,7 +145,13 @@ int main()
     
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
-    gl::set_events_callbacks({camera.events_callbacks()});
+    gl::set_events_callbacks({
+        camera.events_callbacks(),
+        {.on_framebuffer_resized = [&](gl::FramebufferResizedEvent const& e) {
+            if(e.width_in_pixels != 0 && e.height_in_pixels != 0) // OpenGL crash si on tente de faire une render target avec une taille de 0
+                render_target.resize(e.width_in_pixels, e.height_in_pixels);
+        }},
+    });
     
     while (gl::window_is_open())
     {
@@ -112,19 +173,27 @@ int main()
         // float positionX = std::sin(time * speed);
         float positionX = 0;
 
+        glm::mat4 view_matrix = camera.view_matrix();
+        glm::mat4 projection_matrix = glm::infinitePerspective(45.0f, gl::framebuffer_aspect_ratio(), 0.001f);
 
-        glClearColor(0.f, 1.f, 0.f, 0.1f); // Choisis la couleur à utiliser. Les paramètres sont R, G, B, A avec des valeurs qui vont de 0 à 1
-        //glClear(GL_COLOR_BUFFER_BIT); // Exécute concrètement l'action d'appliquer sur tout l'écran la couleur choisie au-dessus
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Vient remplacer glClear(GL_COLOR_BUFFER_BIT);
+        render_target.render([&]() {
+            glClearColor(0.f, 1.f, 0.f, 0.1f); // Choisis la couleur à utiliser. Les paramètres sont R, G, B, A avec des valeurs qui vont de 0 à 1
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Vient remplacer glClear(GL_COLOR_BUFFER_BIT);
+            
+            shader.bind();
+            shader.set_uniform("aspect_ratio", gl::framebuffer_aspect_ratio());
+            shader.set_uniform("offset", positionX);
+            shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix);
+            shader.set_uniform("square_image", texture);
+            triangle_mesh.draw();
+        });
 
-        glm::mat4 const view_matrix = camera.view_matrix();
-        glm::mat4 const projection_matrix = glm::infinitePerspective(45.f, gl::framebuffer_aspect_ratio(), 0.001f);
+        glm::vec3 camera_position = camera.position();  // Utiliser la position de la caméra
 
-        shader.bind();
-        shader.set_uniform("aspect_ratio", gl::framebuffer_aspect_ratio());
-        shader.set_uniform("offset", positionX);
-        shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix);
-        shader.set_uniform("square_image", texture);
-        triangle_mesh.draw();
+        plane_shader.bind();
+        plane_shader.set_uniform("camera_position", camera_position);
+        plane_shader.set_uniform("square_image", render_target.depth_stencil_texture());
+        plane_shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix);
+        plane_mesh.draw();
     }
 }

@@ -8,6 +8,7 @@ int main()
     // Initialisation
     gl::init("TPs de Rendering"); // On crée une fenêtre et on choisit son nom
     gl::maximize_window(); // On peut la maximiser si on veut
+    glEnable(GL_DEPTH_TEST);
 
     auto const shader = gl::Shader{{ //Shader
         .vertex   = gl::ShaderSource::File{"res/vertex.glsl"},
@@ -16,21 +17,27 @@ int main()
 
     auto const triangle_mesh = gl::Mesh{{
         .vertex_buffers = {{
-        .layout = {gl::VertexAttribute::Position3D{0}},
+        .layout = {
+            gl::VertexAttribute::Position3D{0},
+            gl::VertexAttribute::UV{1}
+        },
         .data = {
-            // Continue here
-        //    -0.5f, -0.5f, 0.f,
-        //    -0.5f, 0.5f, 0.f,
-        //    0.5f, -0.5f, 0.f,
-        //    0.5f, 0.5f, 0.f,
         0,0,0, //0
+        0,0,
         0,0,1, //1
+        0,0,
         0,1,0, //2
+        0,0,
         0,1,1, //3
+        1,0,
         1,0,0, //4
+        0,0,
         1,0,1, //5
+        0,1,
         1,1,0, //6
+        0,0,
         1,1,1, //7
+        1,1,
         },
         }},
         .index_buffer = {
@@ -50,7 +57,7 @@ int main()
             4, 6, 7,
             4, 7, 5,
                 
-            // Face haut (Y = 1) - Correction ici
+            // Face haut (Y = 1)
             2, 3, 7,
             2, 7, 6,
                 
@@ -92,8 +99,9 @@ int main()
         float positionX = 0;
 
 
-        glClearColor(0.f, 0.f, 1.f, 0.1f); // Choisis la couleur à utiliser. Les paramètres sont R, G, B, A avec des valeurs qui vont de 0 à 1
-        glClear(GL_COLOR_BUFFER_BIT); // Exécute concrètement l'action d'appliquer sur tout l'écran la couleur choisie au-dessus
+        glClearColor(0.f, 1.f, 0.f, 0.1f); // Choisis la couleur à utiliser. Les paramètres sont R, G, B, A avec des valeurs qui vont de 0 à 1
+        //glClear(GL_COLOR_BUFFER_BIT); // Exécute concrètement l'action d'appliquer sur tout l'écran la couleur choisie au-dessus
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Vient remplacer glClear(GL_COLOR_BUFFER_BIT);
 
         glm::mat4 const view_matrix = camera.view_matrix();
         glm::mat4 const projection_matrix = glm::infinitePerspective(45.f, gl::framebuffer_aspect_ratio(), 0.001f);

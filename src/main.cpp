@@ -93,6 +93,7 @@ int main()
     auto camera = gl::Camera{};
     auto last_time = std::chrono::high_resolution_clock::now();
     float angle = 0.0f;
+    glm::vec3 light_position_turnaround = glm::vec3(2, 0, 0);
 
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
@@ -123,6 +124,8 @@ int main()
 
         angle += 0.0022f;
 
+        light_position_turnaround = glm::vec3(0, cos(angle * 5), sin(angle * 5));
+        light_position_turnaround = glm::vec3(light_position_turnaround.x * 2, light_position_turnaround.y * 2, light_position_turnaround.z * 2);
 
         shader.bind();
         shader.set_uniform("light_direction", glm::vec3(1,1,1));
@@ -131,8 +134,9 @@ int main()
         shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix * rotation_matrix);
         shader.set_uniform("displacement_matrix", rotation_matrix);
         shader.set_uniform("square_image", 0);
+        shader.set_uniform("light_position", light_position_turnaround);
         shader.set_uniform("light_color", glm::vec4(0,0,1,1));
-        shader.set_uniform("point_light_intensity", 0.5f);
+        shader.set_uniform("point_light_intensity", 1.0f);
 
         mesh.draw();
     }

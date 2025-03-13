@@ -3,6 +3,7 @@
 #include "thread"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "tiny_obj_loader.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 // Fonction de chargement du mesh
 auto load_mesh(std::filesystem::path const& path) -> gl::Mesh
@@ -91,6 +92,7 @@ int main()
 
     auto camera = gl::Camera{};
     auto last_time = std::chrono::high_resolution_clock::now();
+    float angle = 0.0f;
 
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
@@ -117,14 +119,18 @@ int main()
 
         glm::mat4 const view_matrix = camera.view_matrix();
         glm::mat4 const projection_matrix = glm::infinitePerspective(45.f, gl::framebuffer_aspect_ratio(), 0.001f);
+        glm::mat4 const rotation_matrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
+
+        angle += 0.0022f;
+
 
         shader.bind();
         shader.set_uniform("light_direction", glm::vec3(1,1,1));
         shader.set_uniform("aspect_ratio", gl::framebuffer_aspect_ratio());
         shader.set_uniform("offset", positionX);
-        shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix);
+        shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix * rotation_matrix);
+        shader.set_uniform("displacement_matrix", rotation_matrix);
         shader.set_uniform("square_image", 0);
-        shader.set_uniform("light_position", glm::vec3(2, 0, 0));
         shader.set_uniform("light_color", glm::vec4(0,0,1,1));
         shader.set_uniform("point_light_intensity", 0.5f);
 

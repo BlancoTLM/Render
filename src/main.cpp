@@ -124,6 +124,9 @@ int main()
         shader.set_uniform("offset", positionX);
         shader.set_uniform("view_projection_matrix", projection_matrix * view_matrix);
         shader.set_uniform("square_image", 0);
+        shader.set_uniform("light_position", glm::vec3(2, 0, 0));
+        shader.set_uniform("light_color", glm::vec4(0,0,1,1));
+        shader.set_uniform("point_light_intensity", 0.5f);
 
         mesh.draw();
     }
